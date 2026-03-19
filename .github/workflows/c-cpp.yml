@@ -4,12 +4,15 @@ on:
   push:
   workflow_dispatch:
 
+# 깃허브의 Node.js 업데이트 잔소리 원천 차단!
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-windows-64:
-    runs-on: windows-latest
+    runs-on: windows-2019 # 최신 VS대신 소스 엔진과 찰떡궁합인 VS2019로 다운그레이드
 
     steps:
-    # 깃허브 최신 정책에 맞게 버전(v4, v5) 업데이트 완료!
     - uses: actions/checkout@v4
     
     - name: 파이썬 세팅
