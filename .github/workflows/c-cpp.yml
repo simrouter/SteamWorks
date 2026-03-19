@@ -1,50 +1,44 @@
-name: SteamWorks.ext Build
+name: SteamWorks 64-bit Build
 
 on:
   push:
-    branches: [ master, windows98 ]
-  pull_request:
-    branches: [ master, windows98 ]
+  workflow_dispatch: # 깃허브에서 수동으로 '빌드 시작' 버튼을 누를 수 있게 해줍니다!
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python-version: [3.8]
-        os: [ubuntu-18.04, windows-2019]
-        exclude:
-         - os: windows-2019
-           python-version: 3.8
+  build-windows-64:
+    runs-on: windows-latest # 에러 덩어리인 맥/리눅스 다 빼고 윈도우 공장만 돌립니다.
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+    - uses: actions/checkout@v3
+    
+    - name: 파이썬 세팅
+      uses: actions/setup-python@v4
       with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Deps
-      if: runner.os == 'Linux'
-      run: |
-        sudo dpkg --add-architecture i386
-        sudo apt-get install lib32stdc++-7-dev lib32z1-dev libc6-dev-i386
-        sudo apt-get install g++-multilib
-    - name: install AMBuild
+        python-version: '3.10'
+        
+    - name: AMBuild 설치
       run: |
         mkdir assets
         cd assets
-        git clone --depth 1 --recurse-submodules -j8 --shallow-submodules -b fix-deps https://github.com/alliedmodders/ambuild.git
-        pip install ./ambuild
-    - name: Clone Dependencies
+        git clone --depth 1 https://github.com/alliedmodders/ambuild.git
+        python -m pip install ./ambuild
+        
+    - name: 64비트용 최신 뼈대(Dependencies) 다운로드
       run: |
-        git clone --depth 1 --recurse-submodules -j8 --shallow-submodules https://$OAUTH@github.com/SteamDatabase/SteamworksSDK.git SteamworksSDK
-        git clone --depth 1 --recurse-submodules -j8 --shallow-submodules -b sdk2013 https://github.com/alliedmodders/hl2sdk.git hl2sdk-sdk2013
-        git clone --depth 1 --recurse-submodules -j8 --shallow-submodules -b 1.10-dev https://github.com/alliedmodders/metamod-source.git mmsource-central
-        git clone --depth 1 --recurse-submodules -j8 --shallow-submodules -b 1.7-dev https://github.com/alliedmodders/sourcemod.git sourcemod-central
-    - name: Run Build
+        git clone --depth 1 https://github.com/SteamDatabase/SteamworksSDK.git SteamworksSDK
+        git clone --depth 1 -b tf2 https://github.com/alliedmodders/hl2sdk.git hl2sdk-tf2
+        git clone --depth 1 -b 1.12-dev https://github.com/alliedmodders/metamod-source.git mmsource-central
+        git clone --depth 1 -b 1.12-dev https://github.com/alliedmodders/sourcemod.git sourcemod-central
+        
+    - name: 64비트 C++ 컴파일 가동!
       run: |
         mkdir build
         cd build
-        cp ../AMBuildScript ../../
-        python ../configure.py -s sdk2013 --hl2sdk-root ../assets --sm-path ../assets/sourcemod-central --mms-path ../assets/mmsource-central --steamworks-path ../assets/SteamworksSD
+        python ../configure.py --enable-optimize --target-arch=x86_64 -s tf2 --hl2sdk-root ../assets --sm-path ../assets/sourcemod-central --mms-path ../assets/mmsource-central --steamworks-path ../assets/SteamworksSDK
         ambuild
+        
+    - name: 완성된 64비트 파일 다운로드 링크 생성
+      uses: actions/upload-artifact@v3
+      with:
+        name: SteamWorks-Win64-Final
+        path: build/
