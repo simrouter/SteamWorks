@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-windows-64:
-    runs-on: windows-2019 # 최신 VS대신 소스 엔진과 찰떡궁합인 VS2019로 다운그레이드
+    runs-on: windows-2022 # 최신 VS대신 소스 엔진과 찰떡궁합인 VS2019로 다운그레이드
 
     steps:
     - uses: actions/checkout@v4
